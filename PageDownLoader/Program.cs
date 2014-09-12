@@ -1,4 +1,5 @@
 ﻿using HtmlAgilityPack;
+using Jurassic;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -32,6 +33,14 @@ namespace PageDownLoader
         {
             initXmlDoc();
             List<string> keyWords = GetKeyWords();
+
+            if (keyWords.Count == 0)
+            {
+                Console.WriteLine("搜索词不能为空！请检查程序运行目录下是否存在keywords.txt文件");
+                Console.ReadKey();
+                return;
+            }
+
             int keyWordIndex = 1;
             foreach (string word in keyWords)
             {
@@ -125,8 +134,11 @@ namespace PageDownLoader
                             string summaryString = RemoveHtmlElements(summary.InnerHtml);
                             //时间戳
                             HtmlNode postTime = node.SelectNodes("./div[2]/p[2]")[0];
+                            string postTimeString = postTime.InnerHtml;
+                            postTimeString = postTimeString.Substring((postTimeString.IndexOf('\'')+1), (postTimeString.LastIndexOf('\'') - postTimeString.IndexOf('\'')-1));
+                            postTimeString = GetPostTime(postTimeString);
 
-                            SaveXmlNodes(titleString, titleLink, summaryString, postTime.InnerHtml);
+                            SaveXmlNodes(titleString, titleLink, summaryString, postTimeString);
                         }
                     }
 
@@ -135,6 +147,24 @@ namespace PageDownLoader
 
                 SaveXmlDoc();//保存结果               
             }
+        }
+
+        /// <summary>
+        /// 将页面上的脚本转换成时间
+        /// </summary>
+        /// <param name="postTime">格式是：1409710649 </param>
+        /// <returns></returns>
+        static string GetPostTime(string postTime)
+        {
+            string timeSpan = string.Empty;
+            var JSEngine = new ScriptEngine();
+            JSEngine.Evaluate("function vrTimeHandle552(time){ if (time) {var type = [\"1分钟前\", \"分钟前\", \"小时前\", \"天前\", \"周前\", \"个月前\", \"年前\"];"
+                +" var secs = (new Date().getTime())/1000 - time; if(secs < 60){ return type[0]; }else if(secs < 3600){	return Math.floor(secs/60) + type[1]; }else if(secs < 24*3600){"
+                +" return Math.floor(secs/3600) + type[2]; }else if(secs < 24*3600 *7){	return Math.floor(secs/(24*3600)) + type[3]; }else if(secs < 24*3600*31){"
+                +" return Math.round(secs/(24*3600*7)) + type[4]; }else if(secs < 24*3600*365){	return Math.round(secs/(24*3600*31)) + type[5];	}else if(secs >= 24*3600*365){"
+                +" return Math.round(secs/(24*3600*365)) + type[6]; }else {	return ''; } } else { return ''; }}");           
+            timeSpan = JSEngine.CallGlobalFunction<string>("vrTimeHandle552", int.Parse(postTime));
+            return timeSpan;
         }
 
         static void SaveXmlNodes(string title, string titleLink, string summary, string postTime)
