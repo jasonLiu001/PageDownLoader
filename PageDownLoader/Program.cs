@@ -127,11 +127,17 @@ namespace PageDownLoader
                         {   //标题
                             HtmlNode title= node.SelectNodes("./div[2]/h4[1]/a[1]")[0];
                             string titleString = RemoveHtmlElements(title.InnerHtml);
+                            titleString = HttpUtility.HtmlDecode(titleString);
+
                             //链接
                             string titleLink = title.Attributes["href"].Value;
+                            titleLink=HttpUtility.HtmlDecode(titleLink);
+
                             //内容
                             HtmlNode summary = node.SelectNodes("./div[2]/p[1]")[0];
                             string summaryString = RemoveHtmlElements(summary.InnerHtml);
+                            summaryString = HttpUtility.HtmlDecode(summaryString);
+
                             //时间戳
                             HtmlNode postTime = node.SelectNodes("./div[2]/p[2]")[0];
                             string postTimeString = postTime.InnerHtml;
